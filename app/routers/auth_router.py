@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Cookie
 from datetime import datetime, timedelta, timezone
 
-from app.models.parameters import AuthSignupReq, AuthSigninReq, AuthResp
+from app.models.parameters import AuthSignupReq, AuthSigninReq, HTTPResp
 from app.dependencies.db import get_db_session
 from app.dependencies.jwt import JWTUtil
 from app.services.auth_service import AuthService
@@ -17,7 +17,7 @@ def auth_signup(
     db=Depends(get_db_session),
     jwtUtil: JWTUtil = Depends(),
     authService: AuthService = Depends(),
-) -> AuthResp:
+) -> HTTPResp:
     res = authService.signup(db, req.login_id, req.password, req.name, req.email)
     if not res.success:
         raise HTTPException(status_code=res.status, detail=res.detail)
@@ -40,7 +40,7 @@ def auth_signin(
     db=Depends(get_db_session),
     jwtUtil: JWTUtil = Depends(),
     authService: AuthService = Depends(),
-) -> AuthResp:
+) -> HTTPResp:
     res = authService.signin(db, req.login_id, req.password)
     if not res.success:
         raise HTTPException(status_code=res.status, detail=res.detail)
@@ -59,12 +59,12 @@ def auth_signin(
 @router.get("/signout")
 def auth_signout(
     response: Response, jwt: str | None = Cookie(default=None)
-) -> AuthResp:
+) -> HTTPResp:
     if jwt is None:
-        return AuthResp(
+        return HTTPResp(
             success=False,
             status=status.HTTP_400_BAD_REQUEST,
             detail="로그인 상태가 아닙니다",
         )
     response.delete_cookie(key="jwt")
-    return AuthResp(success=True, status=status.HTTP_200_OK, detail="로그아웃 성공")
+    return HTTPResp(success=True, status=status.HTTP_200_OK, detail="로그아웃 성공")

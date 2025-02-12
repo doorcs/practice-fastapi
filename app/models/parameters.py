@@ -13,7 +13,7 @@ class AuthSigninReq(BaseModel):
     password: str
 
 
-class AuthResp(BaseModel):
+class HTTPResp(BaseModel):
     success: bool
     status: int
     detail: str | None = None

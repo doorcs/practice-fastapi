@@ -6,11 +6,11 @@ from app.models.item import Item
 
 class Ledger(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    owner: str
-    name: str
+    owner: int = Field(index=True)
     created_at: datetime
-    modified_at: datetime = Field(index=True)
-    deleted: bool = Field(default=False)
+    year: int = Field(index=True)
+    month: int = Field(index=True)  # SQL 쿼리 효율을 위해 year, month 필드 추가
+    deleted: bool = Field(index=True, default=False)
 
     items: list[Item] = Relationship()
     expense: int = Field(default=0)

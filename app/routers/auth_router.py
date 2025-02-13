@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, Response, status, Cookie
 from datetime import datetime, timedelta, timezone
 
 from app.models.parameters import AuthSignupReq, AuthSigninReq, HTTPResp
-from app.dependencies.db import get_db_session
-from app.dependencies.jwt import JWTUtil
 from app.services.auth_service import AuthService
+from app.dependencies.jwt import JWTUtil
+from app.dependencies.db import get_db_session
 
 
 router = APIRouter(prefix="/v1/auth")

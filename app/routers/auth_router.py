@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status, Cookie
+from fastapi import APIRouter, Depends, Response, status, Cookie
 from datetime import datetime, timedelta, timezone
 
 from app.models.parameters import AuthSignupReq, AuthSigninReq, HTTPResp
@@ -20,13 +20,15 @@ def auth_signup(
 ) -> HTTPResp:
     res = authService.signup(db, req.login_id, req.password, req.name, req.email)
     if not res.success:
-        raise HTTPException(status_code=res.status, detail=res.detail)
+        return res
     res.detail = "회원가입 성공"
-    jwt = jwtUtil.create_token(res.model_dump())
+
+    user = authService.get_user(db, req.login_id)
+    jwt = jwtUtil.create_token(user.model_dump())
     response.set_cookie(
         key="jwt",
         value=jwt,
-        # decode token을 호출해 exp 필드를 추출하는것은 너무 비효율적이므로, create_token()에서 exp 필드를 추가하는 로직을 그대로 가져와 사용함
+        # jwtUtil.decode_token()을 호출해 exp 필드를 추출하는것은 너무 비효율적이므로, create_token()에서 exp 필드를 추가하는 로직을 가져와 사용함
         expires=datetime.now(timezone.utc) + timedelta(minutes=60),
         httponly=True,
     )
@@ -43,13 +45,15 @@ def auth_signin(
 ) -> HTTPResp:
     res = authService.signin(db, req.login_id, req.password)
     if not res.success:
-        raise HTTPException(status_code=res.status, detail=res.detail)
+        return res
     res.detail = "로그인 성공"
-    jwt = jwtUtil.create_token(res.model_dump())
+
+    user = authService.get_user(db, req.login_id)
+    jwt = jwtUtil.create_token(user.model_dump())
     response.set_cookie(
         key="jwt",
         value=jwt,
-        # decode token을 호출해 exp 필드를 추출하는것은 너무 비효율적이므로, create_token()에서 exp 필드를 추가하는 로직을 그대로 가져와 사용함
+        # jwtUtil.decode_token()을 호출해 exp 필드를 추출하는것은 너무 비효율적이므로, create_token()에서 exp 필드를 추가하는 로직을 가져와 사용함
         expires=datetime.now(timezone.utc) + timedelta(minutes=60),
         httponly=True,
     )

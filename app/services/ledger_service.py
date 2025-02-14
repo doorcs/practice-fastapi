@@ -194,3 +194,51 @@ class LedgerService:
                 detail="데이터베이스에 문제가 발생했습니다",
             )
         return HTTPResp(success=True, status=status.HTTP_204_NO_CONTENT)  # 삭제 성공
+
+    def modify_item(
+        self,
+        db: Session,
+        user_id: int,
+        year: int,
+        month: int,
+        item_id: int,
+        name: str,
+        price: int,
+        mod_year: int | None = None,
+        mod_month: int | None = None,
+        mod_day: int | None = None,
+    ) -> HTTPResp:
+        ledger = self.get_ledger(db, user_id, year, month)
+        stmt = select(Item).where(Item.item_id == item_id)
+        item = db.exec(stmt).first()
+
+        if item is None or item.deleted:
+            return HTTPResp(
+                success=False,
+                status=status.HTTP_400_BAD_REQUEST,
+                detail="존재하지 않는 항목입니다",
+            )
+
+        if name is not None:
+            item.name = name
+        if price is not None:
+            item.price = price
+        if mod_year is not None:
+            item.year = mod_year
+        if mod_month is not None:
+            item.month = mod_month
+        if mod_day is not None:
+            item.day = mod_day
+
+        try:
+            db.add(item)
+            db.commit()
+            db.refresh(item)
+        except Exception as e:
+            print(e)
+            return HTTPResp(
+                success=False,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="데이터베이스에 문제가 발생했습니다",
+            )
+        return HTTPResp(success=True, status=status.HTTP_200_OK)

@@ -1,8 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status, Cookie
-from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, status
 
 from app.models.item import Item
-from app.models.ledger import Ledger
 from app.models.parameters import HTTPResp
 from app.services.ledger_service import LedgerService
 from app.dependencies.id import get_user
@@ -101,3 +99,53 @@ def delete_item(
     month = int(li[1])
 
     return ledgerService.delete_item(db, user_id, year, month, item_id)
+
+
+@router.patch("/{YYYY_MM_DD}/{item_id}")
+def modify_item(
+    YYYY_MM_DD: str,
+    item_id: int,
+    name: str | None = None,
+    price: int | None = None,
+    mod_year: int | None = None,
+    mod_month: int | None = None,
+    mod_day: int | None = None,
+    db=Depends(get_db_session),
+    user_id=Depends(get_user),
+    ledgerService: LedgerService = Depends(),
+) -> HTTPResp:
+    if user_id is None:
+        return HTTPResp(
+            success=False,
+            status=status.HTTP_401_UNAUTHORIZED,
+            detail="로그인이 필요합니다",
+        )
+    li = YYYY_MM_DD.split("_")
+    year = int(li[0])
+    month = int(li[1])
+
+    if (
+        name is None
+        and price is None
+        and mod_year is None
+        and mod_month is None
+        and mod_day is None
+    ):
+        return HTTPResp(
+            success=False,
+            status=status.HTTP_400_BAD_REQUEST,
+            detail="변경 사항이 없습니다",
+        )
+
+    return ledgerService.modify_item(
+        db,
+        user_id,
+        year,
+        month,
+        item_id,
+        name,
+        price,
+        mod_year,
+        mod_month,
+        mod_day,
+    )

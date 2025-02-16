@@ -208,7 +208,13 @@ class LedgerService:
         mod_month: int | None = None,
         mod_day: int | None = None,
     ) -> HTTPResp:
-        ledger = self.get_ledger(db, user_id, year, month)
+        if not self.ledger_exists(db, user_id, year, month):
+            return HTTPResp(
+                success=False,
+                status=status.HTTP_400_BAD_REQUEST,
+                detail="존재하지 않는 항목입니다",
+            )
+
         stmt = select(Item).where(Item.item_id == item_id)
         item = db.exec(stmt).first()
 
@@ -218,22 +224,36 @@ class LedgerService:
                 status=status.HTTP_400_BAD_REQUEST,
                 detail="존재하지 않는 항목입니다",
             )
-
+        mod_year = mod_year if mod_year is not None else year
+        mod_month = mod_month if mod_month is not None else month
+        item.year = mod_year
+        item.month = mod_month
         if name is not None:
             item.name = name
         if price is not None:
             item.price = price
-        if mod_year is not None:
-            item.year = mod_year
-        if mod_month is not None:
-            item.month = mod_month
         if mod_day is not None:
             item.day = mod_day
 
+        if year != mod_year or month != mod_month:
+            src_ledger = self.get_ledger(db, user_id, year, month)
+            dst_ledger = self.get_ledger(db, user_id, mod_year, mod_month)
+            item.ledger_id = dst_ledger.ledger_id
+            if item.price > 0:
+                src_ledger.expense -= item.price
+                dst_ledger.expense += item.price
+            else:  # item.price <= 0
+                src_ledger.income += item.price
+                src_ledger.income -= item.price
+
         try:
             db.add(item)
+            db.add(src_ledger)
+            db.add(dst_ledger)
             db.commit()
             db.refresh(item)
+            db.refresh(src_ledger)
+            db.refresh(dst_ledger)
         except Exception as e:
             print(e)
             return HTTPResp(

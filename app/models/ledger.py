@@ -14,3 +14,8 @@ class Ledger(SQLModel, table=True):
     income: int = Field(default=0)
     items: list[Item] = Relationship()
     deleted: bool = Field(default=False, index=True)
+
+
+# Relationship() 외에도 연관관계를 명확히 표현해주기 위해 back_populates 속성을 추가해주고 싶은데,
+# 각각의 모델을 별도의 파일에서 관리하면 다중 상속 문제가 발생한다.
+# 파일 분리에 너무 집착하지 말고, 필요에 따라 적절히 모델을 그룹화해보자

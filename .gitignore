@@ -1,5 +1,0 @@
-.venv
-.DS_Store
-.env
-app.db
-__pycache__
